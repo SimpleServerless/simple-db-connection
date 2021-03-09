@@ -41,14 +41,10 @@ class CdkStack(core.Stack):
         # Environment variable mapping
         environment: dict = {'dev': {
                                      'logLevel': 'DEBUG',
-                                     'dbHost': 'simple-serverless-aurora-serverless-development.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com',
-                                     'dbName': 'simple_serverless_dev',
                                      'vpcId': 'vpc-319daa58'
                                      },
                              'prod': {
                                       'logLevel': 'INFO',
-                                      'dbHost': 'simple-serverless-aurora-serverless-production.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com',
-                                      'dbName': 'simple_serverless_prod',
                                       'vpcId': 'vpc-XXXXXX'
                                       }
                              }
@@ -56,16 +52,20 @@ class CdkStack(core.Stack):
         # How to: Retrieve an existing VPC instance.
         vpc = ec2.Vpc.from_lookup(self, 'VPC', vpc_id=environment[stage]['vpcId'])
 
+        # How to: Import a value exported from another stack
+        # These values are imported from the simple-database stack https://github.com/SimpleServerless/simple-database/blob/main/template.yaml#L95
+        # Change these lines to the appropriate values for your project
+        db_host = core.Fn.import_value(f"simple-serverless-database-{stage}-Host")
+        db_name = core.Fn.import_value(f"simple-serverless-database-{stage}-Name")
+        app_security_group_id = core.Fn.import_value(f"simple-serverless-database-{stage}-AppSGId")
+
         env_variables = {
             'STAGE': stage,
-            "PGHOST": environment[stage]['dbHost'],
+            "PGHOST": db_host,
             "PGPORT": "5432",
-            "PGDATABASE": environment[stage]['dbName'],
+            "PGDATABASE": db_name,
             "LOG_LEVEL": environment[stage]['logLevel']
         }
-
-        # How to: Import a value exported from another stack
-        app_security_group_id = core.Fn.import_value(f"simple-serverless-database-us-east-2-{stage}-AppSGId")
 
         # How to: Import a security group
         app_security_group = ec2.SecurityGroup.from_security_group_id(self, "AppSecurityGroup", app_security_group_id)
