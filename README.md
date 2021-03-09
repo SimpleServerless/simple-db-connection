@@ -4,7 +4,7 @@ Let me say this up front. I know that connecting directly to a relational databa
 the horizontal scaling of lambdas better like using DynamoDB instead of RDS or connecting via RDS Proxy. I wanted to 
 demonstrate a simple, efficient and robust pattern for connecting to RDS from a lambda for these reasons. 
 1. Many people just want a simple API in front of a relational database and will not be scaling  
-   enough to justify the costs of RDS Proxy.
+   enough to justify the costs or extra complexity of RDS Proxy.
 2. Aurora Serverless is a relational database that automatically scales and is a legitimate choice for many use cases
    that need persistence with lambdas without the need for RDS Proxy.
 3. Often people who are trying to do something with lambda for the first time have enough to learn without having to 
