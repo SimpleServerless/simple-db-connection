@@ -1,4 +1,26 @@
-# Database Connection - creation and caching: Lesson 3
+# Database Connections: Lesson 3
+
+Let me say this up front. I know that connecting directly to a relational database from a lambda is not always ideal. There are other solutions that handle 
+the horizontal scaling of lambdas better like using DynamoDB instead of RDS or connecting via RDS Proxy. I wanted to 
+demonstrate a simple, efficient and robust pattern for connecting to RDS from a lambda for these reasons. 
+1. Many people just want a simple API in front of a relational database and will not be scaling  
+   enough to justify the costs of RDS Proxy.
+2. Aurora Serverless is a relational database that automatically scales and is a legitimate choice for many use cases
+   that need persistence with lambdas without the need for RDS Proxy.
+3. Often people who are trying to do something with lambda for the first time have enough to learn without having to 
+learn the nuances of DynamoDB, and can't afford to have an RDS instance always running. This project and the [simple-database](https://github.com/SimpleServerless/simple-database)
+project give those folks a way of getting started with lambda and an RDS database with very low AWS costs and a working
+template to help them avoid some common landmines.
+4. I've actually been using these patterns on high volume production systems for years. If you put a little thought into
+timeouts and provisioning it works just fine for a lot of use cases and is one of the simplest ways to build an API.
+  
+
+# Objectives
+- Demonstrate how to create and cache database connections in a lambda. 
+- Demonstrate how to use a decorator in Python to inject datbase connection into a function
+- Demonstrate how to use a decorator in Python to wrap a function with a transaction
+
+# What's in this repo
 This repo is a companion to **Lesson 3** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
 I hope you find something here helpful, and please give this repo a star if you do. Thanks for checking it out.
 
