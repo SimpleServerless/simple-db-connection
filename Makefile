@@ -2,8 +2,8 @@
 
 # Before running STAGE needs to be exported for the shell ex: 'export STAGE=dev'
 
-FUNCTION=dynamic-serverless-routing
-DESCRIPTION="Simple serverless service to demonstrate dynamic routing"
+FUNCTION=simple-db-connection
+DESCRIPTION="Simple serverless service to demonstrate creating and caching a database connection"
 REGION=us-east-2
 AWS_PAGER=
 S3_BUCKET="simple-serverless-$(STAGE)-lambda-artifacts-$(REGION)"

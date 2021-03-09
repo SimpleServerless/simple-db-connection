@@ -1,26 +1,23 @@
 from aws_lambda_powertools import Logger
 import logging
-from psycopg2.extras import RealDictCursor
 from utils import Invocation
 from utils import Router
 import utils
-import psycopg2
+import db_utils
 import sql
-from typing import Any, Optional, Dict
+import uuid
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from psycopg2 import _connect
 
 log: Logger = Logger()
 Logger("botocore").setLevel(logging.INFO)
 Logger("urllib3").setLevel(logging.INFO)
 
 router: Router = Router()
-conn: Optional[_connect] = None
+transaction = db_utils.transaction
 
 # Handler
 @log.inject_lambda_context()
 def handler(event: dict, context: LambdaContext) -> dict:
-    set_connection()
     return Invocation(router, event).call()
 
 
@@ -28,10 +25,10 @@ def handler(event: dict, context: LambdaContext) -> dict:
 # Query Actions
 #
 
-@router.direct("list_students") # Resolves for a direct invoke
 @router.rest("GET", "/students") # Resolves for a ReST endpoint
-@router.graphql("Query", "listStudents") # Resolves for graphQL endpoint
-def list_students(args: dict) -> dict:
+@router.direct("list_students")
+@transaction
+def list_students(conn, args: dict) -> dict:
     with conn.cursor() as curs:
         curs.execute(sql.GET_STUDENTS, )
         item_list = curs.fetchall()
@@ -39,10 +36,9 @@ def list_students(args: dict) -> dict:
     return item_list
 
 
-@router.direct("get_student") # Resolves for a direct invoke
 @router.rest("GET", "/students/{studentId}") # Resolves for a ReST endpoint
-@router.graphql("Query", "getStudent") # Resolves for graphQL endpoint
-def get_student(args: dict) -> dict:
+@transaction
+def get_student(conn, args: dict) -> dict:
     student_id = args.get('studentId')
     with conn.cursor() as curs:
         curs.execute(sql.GET_STUDENT_BY_STUDENT_ID, (student_id,))
@@ -55,33 +51,24 @@ def get_student(args: dict) -> dict:
 #
 # Mutation Actions
 #
-@router.direct("save_student") # Resolves for a direct invoke
-@router.rest("PUT", "/students/{studentId}") # Resolves for a ReST endpoint
-@router.graphql("Mutation", "saveStudent")
-def save_student(args: dict) -> dict:
-    # Save a dog
-    return {'statusCode': 202}
+@router.rest("PUT", "/students") # Resolves for a ReST endpoint
+@transaction
+def save_student(conn, args: dict) -> dict:
+    student = args['student']
+    if 'studentUuid' not in student:
+        student['studentUuid'] = uuid.uuid4()
+
+    with conn.cursor() as curs:
+        curs.execute(sql.SAVE_STUDENT, (
+                                        student['studentUuid'],
+                                        student['firstName'],
+                                        student['lastName'],
+                                        student['status'],
+                                        student['programId'],
+                                        True,
+                                        'system',
+                                        'system'))
 
 
-# Lazy load connection. Should only happen on cold start
-def set_connection():
-    global conn
 
-    try:
-        if conn is None or conn.closed > 0:
-            db_user, db_password = utils.get_db_credentials()
-            log.info("user " + db_user)
-            conn = psycopg2.connect(user=db_user,
-                                          password=db_password,
-                                          sslmode='prefer',
-                                          connect_timeout=3,
-                                          cursor_factory=RealDictCursor)
-            log.info("New DB connection created")
-    except Exception as e:
-        log.error(e)
-        if conn is not None:
-            conn.rollback()
-        raise e
-    finally:
-        if conn is not None:
-            conn.reset()
+    return student

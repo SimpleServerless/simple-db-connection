@@ -101,7 +101,7 @@ class CdkStack(core.Stack):
         # How to: Create a new HTTP API Gateway instance
         http_api = apigatewayv2.HttpApi(
             self, 'APIGateway',
-            api_name=f'dynamic-rest-api-{stage}'
+            api_name=f'{service_name}-api-{stage}'
         )
 
         integration = apigatewayv2_integrations.LambdaProxyIntegration(
@@ -136,7 +136,7 @@ class CdkStack(core.Stack):
 
         graphql_api = appsync.GraphqlApi(
             self, 'GraphQLApi',
-            name='dynamic-graphql-api-' + stage,
+            name=f'{service_name}-graphql-api-' + stage,
             authorization_config=graphql_auth_config,
             schema=graphql_schema
         )
@@ -195,7 +195,7 @@ app = core.App()
 account = os.environ['AWS_ACCOUNT']
 region = os.environ['AWS_DEFAULT_REGION']
 
-CdkStack(app, "dynamic-routing-us-east2-dev", env={"account": account, "region": region})
+CdkStack(app, f"{service_name}-routing-us-east2-dev", env={"account": account, "region": region})
 
 app.synth()
 
