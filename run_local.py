@@ -50,8 +50,8 @@ events = {
         """
         {
             "version": "2.0",
-            "routeKey": "PUT /students/{studentId}",
-            "rawPath": "/students/1",
+            "routeKey": "POST /students",
+            "rawPath": "/students",
             "rawQueryString": "testParam=4567&otherParam=8888",
             "headers": {
               "accept": "application/json"
@@ -61,7 +61,6 @@ events = {
               "testParam": "4567"
             },
             "pathParameters": {
-              "studentId": "4"
             },
             "body": "{\\\"student\\\": {\\\"studentUuid\\\": \\\"7812233d-9289-4442-8cbb-92535124e9a7\\\", \\\"firstName\\\": \\\"Jack\\\", \\\"lastName\\\": \\\"Harkness\\\", \\\"status\\\": \\\"ENROLLED\\\", \\\"programId\\\": \\\"d958c587-db7b-41f9-9954-c33dc56e08f5\\\"}}",
             "isBase64Encoded": false

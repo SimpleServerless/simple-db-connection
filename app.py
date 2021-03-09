@@ -118,65 +118,11 @@ class CdkStack(core.Stack):
                 integration=integration
             )
 
-        #
-        # Graphql (AppSync) stuff starts here
-        #
-        policy = iam.PolicyStatement(actions=['lambda:InvokeFunction'],
-                                     resources=[service_lambda.function_arn])
-        principal = iam.ServicePrincipal('appsync.amazonaws.com')
-        service_role = iam.Role(self, 'service-role', assumed_by=principal)
-        service_role.add_to_policy(policy)
-
-        # How to: import an existing AppSync instance
-        # graphql_api = appsync.GraphqlApi.from_graphql_api_attributes(self, 'GraphQLApi', graphql_api_id='phw4kdabqnbjzi4czy3dtbmynu')
-
-        graphql_schema = appsync.Schema(file_path='./src/schema.graphql')
-        graphql_auth_mode = appsync.AuthorizationMode(authorization_type=appsync.AuthorizationType.API_KEY)
-        graphql_auth_config = appsync.AuthorizationConfig(default_authorization=graphql_auth_mode)
-
-        graphql_api = appsync.GraphqlApi(
-            self, 'GraphQLApi',
-            name=f'{service_name}-graphql-api-' + stage,
-            authorization_config=graphql_auth_config,
-            schema=graphql_schema
-        )
-
-        datasource_name = to_camel(service_name) + "Lambda"
-        lambda_data_source = appsync.LambdaDataSource(
-            self, 'LambdaDataSource',
-            api=graphql_api,
-            name=datasource_name,
-            lambda_function=service_lambda,
-            service_role=service_role
-        )
-
-        # How to: auto generate GraphQL resolvers from decorators ex: @router.graphql("Query", "listStudents").
-        for field_name, graphql_def in lambda_function.router.get_graphql_endpoints().items():
-            print(f"Creating graphql {graphql_def['parent']} for {field_name}")
-            appsync.Resolver(
-                self, field_name + "Resolver",
-                api=graphql_api,
-                type_name=graphql_def['parent'],
-                field_name=field_name,
-                data_source=lambda_data_source
-            )
-
 
         core.CfnOutput(self, "RestAPIOutput",
                        value=http_api.url,
                        export_name=f"{stack_name}-RestApiUrl-{stage}")
 
-        core.CfnOutput(self, "GraphQLApiIdOutput",
-                       value=graphql_api.api_id,
-                       export_name=f"{stack_name}-GraphqlApiId-{stage}")
-
-        core.CfnOutput(self, "GraphQLUrlOutput",
-                       value=graphql_api.graphql_url,
-                       export_name=f"{stack_name}-GraphqlUrl-{stage}")
-
-        core.CfnOutput(self, "GraphQLApiKeyOutput",
-                       value=graphql_api.api_key,
-                       export_name=f"{stack_name}-GraphQLApiKey-{stage}")
 
 
 # Sometimes AWS lets you use '-' ex: service-name and sometimes you have to or want to use camel case ex: serviceName.

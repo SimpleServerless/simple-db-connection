@@ -51,7 +51,7 @@ def get_student(conn, args: dict) -> dict:
 #
 # Mutation Actions
 #
-@router.rest("PUT", "/students") # Resolves for a ReST endpoint
+@router.rest("POST", "/students") # Resolves for a ReST endpoint
 @transaction
 def save_student(conn, args: dict) -> dict:
     student = args['student']
@@ -68,7 +68,7 @@ def save_student(conn, args: dict) -> dict:
                                         True,
                                         'system',
                                         'system'))
+        item = curs.fetchone()
+    item = utils.camelfy(item)
 
-
-
-    return student
+    return item
