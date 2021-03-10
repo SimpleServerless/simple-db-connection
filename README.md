@@ -152,6 +152,7 @@ environment: dict = {'dev': {
 
 # Deploy
 ```
+export set STAGE=dev
 git clone git@github.com:SimpleServerless/simple-db-connection.git
 cd simple-db-connection
 make deploy
@@ -181,6 +182,9 @@ You can run this script in an IDE to execute lambda_function.handler locally, se
 
 
 # Make Targets
+Most make targets require that you export a `STAGE` variable (dev, prod, test...). 
+This makes it easier to deploy a stacks for multiple environments on the same AWS account.
+
 **clean:** Removes artifacts that are created by testing and deploying
 
 **build:** Uses src/requirements.txt to prepare target appropriate (manylinux1_x86_64) dependencies for deployment
