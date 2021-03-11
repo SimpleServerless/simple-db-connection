@@ -1,4 +1,4 @@
-# Database Connections: Lesson 3
+# Database Connections: Lesson 6
 
 Let me say this up front. I know that connecting directly to a relational database from a lambda is not always ideal. There are other solutions that handle 
 the horizontal scaling of lambdas better like using DynamoDB instead of RDS or connecting via RDS Proxy. I wanted to 
@@ -21,7 +21,7 @@ timeouts and provisioning it works just fine for a lot of use cases and is one o
 - Demonstrate how to use a decorator in Python to wrap a function with a transaction
 
 # What's in this repo
-This repo is a companion to **Lesson 3** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
+This repo is a companion to **Lesson 6** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
 I hope you find something here helpful, and please give this repo a star if you do. Thanks for checking it out.
 
 This repo builds on the patterns used in [Dynamic Routing: Lesson 2](https://github.com/SimpleServerless/dynamic-routing) 
