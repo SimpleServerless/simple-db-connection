@@ -117,7 +117,8 @@ def transaction(func):
 - An RDS postgresql database on your VPC to connnect to
 - An AWS account with permissions to deploy Lambda, API Gateway, AppSync 
 - An S3 Bucket for uploading the lambda deployments as defined in the `S3_BUCKET` variable in the make file.
-and other resources they depend on.
+and other resources they depend on
+- A parameter in Systems Manage - Parameter Store with the name VpcId and value of your vpc id: [Parameter Creation](https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-create-console.html)
 - A shell configured with your AWS credentials AWS_DEFAULT_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY... 
   [docs](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
 
@@ -140,14 +141,6 @@ app_security_group_id = core.Fn.import_value(f"simple-serverless-database-{stage
 - Create a plain text json secret in secrets manager for the database credentials. The value should look 
 like `{"username": "my-db-user","password": "my-db-password"}` and the name should be `simple-serverless/db-credentials`
 or whatever you want to define it as in db_utils.get_db_credentials().
-- Change the vpcId in the environment dictionary in app.py to the appropriate values for the environment you're deploying to.
-```
-environment: dict = {'dev': {
-                             'logLevel': 'DEBUG',
-                             'vpcId': 'vpc-myvpcid'
-                             }
-                     }
-```
 
 
 # Deploy

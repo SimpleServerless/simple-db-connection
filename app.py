@@ -40,17 +40,20 @@ class CdkStack(core.Stack):
 
         # Environment variable mapping
         environment: dict = {'dev': {
-                                     'logLevel': 'DEBUG',
-                                     'vpcId': 'vpc-319daa58'
+                                     'logLevel': 'DEBUG'
                                      },
                              'prod': {
-                                      'logLevel': 'INFO',
-                                      'vpcId': 'vpc-XXXXXX'
+                                      'logLevel': 'INFO'
                                       }
                              }
 
         # How to: Retrieve an existing VPC instance.
-        vpc = ec2.Vpc.from_lookup(self, 'VPC', vpc_id=environment[stage]['vpcId'])
+        vpc_id: str = ssm.get_parameter(Name="VpcId")['Parameter']['Value']
+        vpc = ec2.Vpc.from_lookup(self, 'VPC', vpc_id=vpc_id)
+
+        private_subnet_1_id: str = ssm.get_parameter(Name="private-subnet-1")['Parameter']['Value']
+        private_subnet_2_id: str = ssm.get_parameter(Name="private-subnet-2")['Parameter']['Value']
+        private_subnet_3_id: str = ssm.get_parameter(Name="private-subnet-3")['Parameter']['Value']
 
         # How to: Import a value exported from another stack
         # These values are imported from the simple-database stack https://github.com/SimpleServerless/simple-database/blob/main/template.yaml#L95
@@ -90,6 +93,17 @@ class CdkStack(core.Stack):
             effect=iam.Effect.ALLOW,
             actions=["secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue", "secretsmanager:List*"],
             resources=[f"arn:aws:secretsmanager:{region}:{account}:secret:simple-serverless/*"]))
+
+        # How to create at VPC Endpoint to access secrets manager.
+        # You can delete this if you're not too cheap to pay for a NAT instance.
+        ec2.CfnVPCEndpoint(self, 'SecretsManagerVPCEndpoint',
+                           service_name='com.amazonaws.us-east-2.secretsmanager',
+                           vpc_endpoint_type='Interface',
+                           vpc_id=vpc_id,
+                           subnet_ids=[private_subnet_1_id, private_subnet_2_id, private_subnet_3_id],
+                           security_group_ids=[app_security_group_id],
+                           private_dns_enabled=True
+                           )
 
         #
         # REST (API Gateway HTTP) stuff starts here
