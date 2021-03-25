@@ -170,7 +170,7 @@ app = core.App()
 account = os.environ['AWS_ACCOUNT']
 region = os.environ['AWS_DEFAULT_REGION']
 
-CdkStack(app, f"{service_name}-routing-us-east2-dev", env={"account": account, "region": region})
+CdkStack(app, f"{service_name}-us-east-2-dev", env={"account": account, "region": region})
 
 app.synth()
 
