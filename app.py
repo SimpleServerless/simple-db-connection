@@ -2,7 +2,6 @@ import os
 import sys
 
 import aws_cdk.core as core
-import aws_cdk.aws_appsync as appsync
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as aws_lambda
 import aws_cdk.aws_iam as iam
@@ -94,14 +93,30 @@ class CdkStack(core.Stack):
             actions=["secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue", "secretsmanager:List*"],
             resources=[f"arn:aws:secretsmanager:{region}:{account}:secret:simple-serverless/*"]))
 
+        # Make a wide open security group for the secrets vpc endpoint
+        vpc_endpoint_sg = ec2.SecurityGroup(self,
+                                            'VpcEndpointSG',
+                                            vpc=vpc,
+                                            allow_all_outbound=True,
+                                            description="Secret Manager VPC Endpoint SG")
+
+        vpc_endpoint_sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp_range(0, 65535),
+            description="all inbound",
+        )
+
         # How to create at VPC Endpoint to access secrets manager.
         # You can delete this if you're not too cheap to pay for a NAT instance.
+        # This still costs $0.24 per day per AZ, so $0.72 for the three AZs we're using here
+        # This block is the only reoccurring cost in this stack and is the only reason I delete this stack
+        # when I'm not actively working on it.
         ec2.CfnVPCEndpoint(self, 'SecretsManagerVPCEndpoint',
                            service_name='com.amazonaws.us-east-2.secretsmanager',
                            vpc_endpoint_type='Interface',
                            vpc_id=vpc_id,
                            subnet_ids=[private_subnet_1_id, private_subnet_2_id, private_subnet_3_id],
-                           security_group_ids=[app_security_group_id],
+                           security_group_ids=[vpc_endpoint_sg.security_group_id],
                            private_dns_enabled=True
                            )
 

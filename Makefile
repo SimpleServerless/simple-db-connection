@@ -64,4 +64,8 @@ tail:
 	aws logs tail --follow --format short /aws/lambda/$(FUNCTION)-$(STAGE)
 
 
+delete-stack:
+	aws cloudformation delete-stack --stack-name $(STACK_NAME)
+
+
 .PHONY : package

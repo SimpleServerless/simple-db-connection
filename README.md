@@ -39,7 +39,7 @@ You will find in this repo:
   are automatically rolled back.
 - A single CDK file (app.py) that will scan lambda_function.py for decorators ex: `@router.rest("GET", "/students")` and 
   automatically generate API Gateway (REST) or AppSync (GraphQL) endpoints. See [Dynamic Routing: Lesson 2](https://github.com/SimpleServerless/dynamic-routing)
-- All the infrastructure as code needed to deploy fully functional APIs via SAM which is an AWS extension of CloudFormation
+- All the infrastructure as code needed to deploy fully functional APIs via CDK
 - A simple script (`run_local.py`) that makes it easy to iterate and debug locally
 - Commands to invoke a deployed lambda and tail its logs in realtime (`make invoke`, `make tail`)
 
@@ -58,7 +58,7 @@ def list_students(conn, args: dict) -> dict:
     return item_list
 ```
 
-This wraps the function in a decorator that lazy loads and caches the connection and handles the sql tranaction appropriately.
+This wraps the function in a decorator that lazy loads and caches the connection and handles the sql transaction appropriately.
 The connection also uses the `RealDictCursor` so all results are returned as dictionaries. This complements lambda nicely
 as it allows you to return the results directly and let lambda convert the dictionary to json.
 

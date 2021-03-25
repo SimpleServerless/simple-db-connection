@@ -8,10 +8,14 @@ import psycopg2
 from psycopg2 import _connect
 from psycopg2.extras import RealDictCursor
 from aws_lambda_powertools import Logger
+import logging
 
 log = Logger()
+Logger("botocore").setLevel(logging.INFO)
+Logger("urllib3").setLevel(logging.INFO)
 
 secret_client = boto3.client('secretsmanager')
+ssm = boto3.client('ssm')
 
 connection: _connect = None
 db_user = None
@@ -23,7 +27,10 @@ def transaction_wrapper(name="transaction_wrapper", **kwargs):
 
     # Lazy load credentials. Should only happen on cold start
     if db_user is None:
-        db_user, db_password = get_db_credentials()
+        # Get credentials form parameter store
+        db_user, db_password = get_db_credentials_from_sm()
+        # Get credentials from secret manager
+        # db_user, db_password = get_db_credentials_from_sm()
     log.debug("User: " + db_user)
 
     try:
@@ -57,7 +64,8 @@ def transaction(func):
     return inner
 
 
-def get_db_credentials() -> tuple:
+# Here's how you can get credentials stored like {"username": "myuser", "password": "mypassword"} from secrets manager
+def get_db_credentials_from_sm() -> tuple:
     log.info('Retrieving db credentials from SecretsManager')
     secret_key = "simple-serverless/db-credentials"
     try:
