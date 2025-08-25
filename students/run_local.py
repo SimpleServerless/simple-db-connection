@@ -21,6 +21,13 @@ events = {
             "headers": {
               "accept": "application/json"
             },
+            "requestContext": {
+                "http": {
+                  "method": "GET",
+                  "path": "/students"
+                },
+                "stage": "$default"
+            },
             "isBase64Encoded": false
         }
         """,
@@ -41,6 +48,18 @@ events = {
             },
             "pathParameters": {
               "studentId": "1"
+            },
+            "requestContext": {
+                "accountId": "778590694111",
+                "apiId": "rnkhtugxlh",
+                "domainName": "rnkhtugxlh.execute-api.us-east-2.amazonaws.com",
+                "domainPrefix": "rnkhtugxlh",
+                "http": {
+                  "method": "GET",
+                  "path": "/students",
+                  "protocol": "HTTP/1.1",
+                  "sourceIp": "216.147.121.237",
+                  "userAgent": "PostmanRuntime/7.45.0"
             },
             "isBase64Encoded": false
         }
@@ -93,12 +112,15 @@ def run(event_string, handler_function):
     # Log the result of the main handler as json
     print("\nRESULT:")
     print("\n" + json.dumps(result, indent=4, sort_keys=True, default=str))
+    print("\n\nBODY:")
+    body = json.loads(result["body"])
+    print("\n" + json.dumps(body, indent=4, sort_keys=True, default=str))
     return result
 
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
-    from src import lambda_function
+    from students.src import lambda_function
 
     event_name = sys.argv[1]
     print("Running event: " + event_name)

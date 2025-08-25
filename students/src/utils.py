@@ -2,7 +2,7 @@ from datetime import datetime, date
 import json
 import re
 from aws_lambda_powertools import Logger
-from typing import Any, Dict, Tuple, Callable
+from typing import Any, Dict, Tuple, Callable, Optional
 
 log = Logger()
 
@@ -120,7 +120,6 @@ class Invocation:
 # Utility functions
 #
 
-
 def to_snake(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
@@ -156,3 +155,48 @@ def camelfy_object(object: dict) -> dict:
         else:
             new_object_dict[to_camel(key)] = object[key]
     return new_object_dict
+
+
+def create_rest_event(method: str, path: str, body: Optional[dict] = None) -> dict:
+    """
+    Creates a REST API Gateway event payload similar to those in run_local.py
+
+    Args:
+        method: HTTP method (GET, POST, PUT, DELETE, etc.)
+        path: API path (e.g., '/students', '/students/123')
+        body: Optional request body as a dictionary
+
+    Returns:
+        A dictionary representing an API Gateway event payload
+    """
+    # Ensure path starts with a forward slash
+    if not path.startswith('/'):
+        path = '/' + path
+
+    # Build routeKey with the method and path
+    route_key = f"{method} {path}"
+
+    # Create the basic event structure
+    event = {
+        "version": "2.0",
+        "routeKey": route_key,
+        "rawPath": path,
+        "headers": {
+            "accept": "application/json"
+        },
+        "requestContext": {
+            "http": {
+                "method": method,
+                "path": path
+            },
+            "stage": "$default"
+        },
+        "isBase64Encoded": False
+    }
+
+    # Add body if provided
+    if body:
+        # Escape JSON string for embedding in another JSON string
+        event["body"] = json.dumps(body).replace('"', '\\"')
+
+    return event

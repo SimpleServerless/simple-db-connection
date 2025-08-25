@@ -1,4 +1,5 @@
 from aws_lambda_powertools import Logger
+from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 import logging
 from utils import Invocation
 from utils import Router
@@ -12,23 +13,24 @@ log: Logger = Logger()
 Logger("botocore").setLevel(logging.INFO)
 Logger("urllib3").setLevel(logging.INFO)
 
+app = APIGatewayHttpResolver()
 router: Router = Router()
 transaction = db_utils.transaction
 
 # Handler
 @log.inject_lambda_context()
 def handler(event: dict, context: LambdaContext) -> dict:
-    return Invocation(router, event).call()
+    print(event)
+    return app.resolve(event, context)
 
 
 #
 # Query Actions
 #
 
-@router.rest("GET", "/students") # Resolves for a ReST endpoint
-@router.direct("list_students")
+@app.get("/students")
 @transaction
-def list_students(conn, args: dict) -> dict:
+def list_students(conn) -> dict:
     with conn.cursor() as curs:
         curs.execute(sql.GET_STUDENTS, )
         item_list = curs.fetchall()
