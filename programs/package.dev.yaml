@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Simple serverless programs service
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+    - local
+    - staging
+    Description: The environment to be run on (typically local, dev, staging or prod)
+  ServiceName:
+    Type: String
+    Description: The service name
+  ServicePath:
+    Type: String
+    Description: 'The path for this service ex: /participants'
+Mappings:
+  Environment:
+    dev:
+      LogLevel: DEBUG
+      DBHost: simple-serverless-aurora-serverless-development.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com
+    prod:
+      LogLevel: INFO
+      DBHost: simple-serverless-aurora-serverless-prod.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com
+Resources:
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ServiceName}-${StageName}
+      Handler: lambda_function.handler
+      Runtime: python3.12
+      CodeUri: s3://simple-serverless-dev-lambda-artifacts-us-east-2/6c39c7ba82fe2ede22895042221407f8
+      Timeout: 35
+      MemorySize: 128
+      Tracing: Active
+      VpcConfig:
+        SecurityGroupIds:
+        - Fn::Sub: '{{resolve:ssm:AppSecurityGroup}}'
+        SubnetIds:
+        - Fn::Sub: '{{resolve:ssm:private-subnet-1}}'
+        - Fn::Sub: '{{resolve:ssm:private-subnet-2}}'
+        - Fn::Sub: '{{resolve:ssm:private-subnet-3}}'
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
+          - secretsmanager:GetSecretValue
+          Resource:
+            Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:simple-serverless/db-credentials*
+      Environment:
+        Variables:
+          STAGE:
+            Ref: StageName
+          PGHOST:
+            Fn::FindInMap:
+            - Environment
+            - Ref: StageName
+            - DBHost
+          PGPORT: 5432
+          PGDATABASE:
+            Fn::Sub: simple_serverless_${StageName}
+          LOG_LEVEL:
+            Fn::FindInMap:
+            - Environment
+            - Ref: StageName
+            - LogLevel
+          POWERTOOLS_SERVICE_NAME:
+            Fn::Sub: simple-serverless-${ServiceName}
+    Metadata:
+      SamResourceId: LambdaFunction
+  APIGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: LambdaFunction
+      Principal: apigateway.amazonaws.com
+    DependsOn:
+    - LambdaFunction
+    Metadata:
+      SamResourceId: APIGatewayLambdaPermission
+  ApiGatewayV2Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Sub: api-config-${StageName}-RestApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::GetAtt:
+        - LambdaFunction
+        - Arn
+      TimeoutInMillis: 30000
+      PayloadFormatVersion: 2.0
+    Metadata:
+      SamResourceId: ApiGatewayV2Integration
+  RouteGetPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey:
+        Fn::Sub: GET /${ServicePath}/{proxy+}
+      ApiId:
+        Fn::ImportValue:
+          Fn::Sub: api-config-${StageName}-RestApiId
+      Target:
+        Fn::Sub: integrations/${ApiGatewayV2Integration}
+    Metadata:
+      SamResourceId: RouteGetPath
+  RouteGetNoPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey:
+        Fn::Sub: GET /${ServicePath}
+      ApiId:
+        Fn::ImportValue:
+          Fn::Sub: api-config-${StageName}-RestApiId
+      Target:
+        Fn::Sub: integrations/${ApiGatewayV2Integration}
+    Metadata:
+      SamResourceId: RouteGetNoPath
+  RoutePostPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey:
+        Fn::Sub: POST /${ServicePath}/{proxy+}
+      ApiId:
+        Fn::ImportValue:
+          Fn::Sub: api-config-${StageName}-RestApiId
+      Target:
+        Fn::Sub: integrations/${ApiGatewayV2Integration}
+    Metadata:
+      SamResourceId: RoutePostPath
+  RoutePostNoPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey:
+        Fn::Sub: POST /${ServicePath}
+      ApiId:
+        Fn::ImportValue:
+          Fn::Sub: api-config-${StageName}-RestApiId
+      Target:
+        Fn::Sub: integrations/${ApiGatewayV2Integration}
+    Metadata:
+      SamResourceId: RoutePostNoPath
+Outputs:
+  ImportedApiGatewayId:
+    Description: The imported ID of the REST API Gateway
+    Value:
+      Fn::ImportValue:
+        Fn::Sub: api-config-${StageName}-RestApiId

@@ -6,29 +6,9 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 import utils
 
 events = {
-    "LIST_STUDENTS": {
-        "version": "2.0",
-        "routeKey": "GET /students",
-        "rawPath": "/students",
-        "headers": {
-          "accept": "application/json"
-        },
-        "requestContext": {
-            "http": {
-              "method": "GET",
-              "path": "/students"
-            },
-            "stage": "$default"
-        },
-        "isBase64Encoded": False
-    },
+    "LIST_PROGRAMS": utils.create_rest_event("GET", "/programs"),
 
-    "LIST_STUDENTS_EASY": utils.create_rest_event("GET", "/students"),
-
-    "GET_STUDENT_BY_STUDENT_ID": utils.create_rest_event("GET", "/students/1"),
-
-    "SAVE_STUDENT": utils.create_rest_event("POST", "/students/1", {"status": "ENROLLED"}),
-
+    "GET_PROGRAM_BY_PROGRAM_ID": utils.create_rest_event("GET", "/programs/c69ce217-c08d-4e50-bdda-4dfe4f9a9a3c"),
 }
 
 

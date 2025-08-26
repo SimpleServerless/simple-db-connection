@@ -16,11 +16,12 @@ AND student_id = %s;
 
 # Closest thing postgres has to an upsert
 SAVE_STUDENT: str = """
-INSERT INTO students (student_uuid, first_name, last_name, status, program_id, active, updated_by, created_by)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT(student_uuid) DO UPDATE
+INSERT INTO students (student_uuid, student_id, first_name, last_name, status, program_id, active, updated_by, created_by)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT(student_id) DO UPDATE
 SET
   student_uuid = excluded.student_uuid,
+  student_id = excluded.student_id,
   first_name = excluded.first_name,
   last_name = excluded.last_name,
   status = excluded.status,

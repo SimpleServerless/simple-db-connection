@@ -49,7 +49,7 @@ You will find in this repo:
 Note: because I ran out of talent the `@transacton` decorator has to be the last decorator before the function definition.
 
 ```
-@router.rest("GET", "/students")
+@app.get("/students")
 @transaction
 def list_students(conn, args: dict) -> dict:
     with conn.cursor() as curs:
@@ -109,7 +109,7 @@ def transaction(func):
 
 # Requirements
 
-- Python 3.8
+- Python 3.12
 - Pip 3
 - AWS CLI: [Install](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - CDK: [Getting started with CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)
@@ -153,9 +153,6 @@ make deploy
 
 # Files Explanation
 
-**app.py:** All the infrastructure as code needed to deploy this recipe to AWS. This file contains the code that does 
-the actual dynamic generation of endpoints based on the decorators found in lambda_function
-
 **Makefile:** Make targets for deploying, testing and iterating. See [Make Targets](#make-targets) for more information.
 
 **run_local.py:** Helper script for testing and iterating locally in a shell or IDE. 
@@ -182,10 +179,7 @@ This makes it easier to deploy a stacks for multiple environments on the same AW
 
 **build:** Uses src/requirements.txt to prepare target appropriate (manylinux1_x86_64) dependencies for deployment
 
-**deploy:** Uses CDK and `app.py` to deploy the function and supporting infrastructure to AWS.
-
-**synth:** Uses CDK and `app.py` to generate and output a CloudFormation template that represents the deployment. This can be
-useful for iterating on changes to `app.py` without waiting for an actual deploy to see if it's valid.
+**deploy:** Uses CloudFormation to deploy the function and supporting infrastructure to AWS.
 
 **invoke:** Uses the AWS CLI to invoke the deployed function.
 

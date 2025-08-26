@@ -1,12 +1,10 @@
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 import logging
-from utils import Invocation
 from utils import Router
 import utils
 import db_utils
-import sql
-import uuid
+import student_sql
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 log: Logger = Logger()
@@ -32,41 +30,44 @@ def handler(event: dict, context: LambdaContext) -> dict:
 @transaction
 def list_students(conn) -> dict:
     with conn.cursor() as curs:
-        curs.execute(sql.GET_STUDENTS, )
+        curs.execute(student_sql.GET_STUDENTS, )
         item_list = curs.fetchall()
     item_list = utils.camelfy(item_list)
     return item_list
 
 
-@router.rest("GET", "/students/{studentId}") # Resolves for a ReST endpoint
+@app.get("/students/<student_id>") # Resolves for a ReST endpoint
 @transaction
-def get_student(conn, args: dict) -> dict:
-    student_id = args.get('studentId')
+def get_student(conn, student_id) -> dict:
     with conn.cursor() as curs:
-        curs.execute(sql.GET_STUDENT_BY_STUDENT_ID, (student_id,))
+        curs.execute(student_sql.GET_STUDENT_BY_STUDENT_ID, (student_id,))
         item = curs.fetchone()
     item = utils.camelfy(item)
 
     return item
 
 
+
+
 #
 # Mutation Actions
 #
-@router.rest("POST", "/students") # Resolves for a ReST endpoint
+@app.post("/students/<student_id>") # Resolves for a ReST endpoint
 @transaction
-def save_student(conn, args: dict) -> dict:
-    student = args['student']
-    if 'studentUuid' not in student:
-        student['studentUuid'] = uuid.uuid4()
-
+def save_student(conn, student_id) -> dict:
     with conn.cursor() as curs:
-        curs.execute(sql.SAVE_STUDENT, (
-                                        student['studentUuid'],
-                                        student['firstName'],
-                                        student['lastName'],
-                                        student['status'],
-                                        student['programId'],
+        student_in = app.current_event.json_body
+        student_existing = get_student(student_id)
+        # Merge student_in and student_existing, giving preference to student_in
+        if student_existing is not None:
+            student_in = {**student_existing, **student_in}
+        curs.execute(student_sql.SAVE_STUDENT, (
+                                        student_in['studentUuid'],
+                                        student_in['studentId'],
+                                        student_in['firstName'],
+                                        student_in['lastName'],
+                                        student_in['status'],
+                                        student_in['programId'],
                                         True,
                                         'system',
                                         'system'))

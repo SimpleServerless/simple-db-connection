@@ -197,6 +197,38 @@ def create_rest_event(method: str, path: str, body: Optional[dict] = None) -> di
     # Add body if provided
     if body:
         # Escape JSON string for embedding in another JSON string
-        event["body"] = json.dumps(body).replace('"', '\\"')
+        event["body"] = json.dumps(body)
 
     return event
+
+
+def create_sqs_event(body: str) -> dict:
+    """
+    Creates an SQS event payload for testing Lambda functions that process SQS messages.
+
+    Args:
+        body: The message body content as a string
+
+    Returns:
+        A dictionary representing an SQS event payload
+    """
+    return {
+        "Records": [
+            {
+                "messageId": "3c5fda4e-3f6a-4f1d-9a08-1234567890ab",
+                "receiptHandle": "AQEB1234...example-handle...",
+                "body": body,
+                "attributes": {
+                    "ApproximateReceiveCount": "1",
+                    "SentTimestamp": "1724600000000",
+                    "SenderId": "AIDAEXAMPLEID",
+                    "ApproximateFirstReceiveTimestamp": "1724600005000"
+                },
+                "messageAttributes": {},
+                "md5OfBody": "7e94b6e91d2008c34e19d0f0a38ce871",
+                "eventSource": "aws:sqs",
+                "eventSourceARN": "arn:aws:sqs:us-east-2:123456789012:MyTestQueue",
+                "awsRegion": "us-east-2"
+            }
+        ]
+    }

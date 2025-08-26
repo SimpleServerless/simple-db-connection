@@ -6,14 +6,17 @@ from pathlib import Path
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-import utils
+# Get the service module's base directory
+service_dir = Path(__file__).parent.parent.parent
+# Add the source directory to the Python path
+src_dir = service_dir / "src"
+sys.path.insert(0, str(src_dir))
 
-# Add the source directory to the Python path so we can import the lambda function
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
+# Add the service root directory to import run_local.py contents if needed
+sys.path.insert(0, str(service_dir))
+
 import lambda_function
-
-# Import the event from run_local.py
-sys.path.append(str(Path(__file__).parent.parent.parent))
+import utils
 
 class MockContext(LambdaContext):
     def __init__(self,
@@ -55,3 +58,32 @@ def test_list_students_integration():
         assert "lastName" in student
         assert "status" in student
         assert "programId" in student
+
+
+def test_get_student_by_student_id():
+    """
+    Integration test that replicates what happens when run_local.py is ran with GET_STUDENT_BY_STUDENT_ID.
+    It connects to the actual database and validates that it gets a student record for student_id=1.
+    """
+
+    get_student_event = utils.create_rest_event("GET", "/students/1")
+
+    # Call the lambda handler with the event and context
+    result = lambda_function.handler(get_student_event, mock_context)
+
+    # Verify that the response is successful
+    assert result["statusCode"] == 200
+
+    # Parse the response body
+    body = json.loads(result["body"])
+
+    # Verify that we got a student record
+    assert isinstance(body, dict)
+
+    # Verify that the student has the required fields
+    assert "studentId" in body
+    assert body["studentId"] == 1
+    assert "firstName" in body
+    assert "lastName" in body
+    assert "status" in body
+    assert "programId" in body
