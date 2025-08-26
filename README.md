@@ -144,6 +144,8 @@ or whatever you want to define it as in db_utils.get_db_credentials().
 
 
 # Deploy
+Note: The API Gateway is only defined in the /students module and referenced in all other modules.
+Deploy /students first to create the API Gateway and then deploy the other modules.
 ```
 export set STAGE=dev
 git clone git@github.com:SimpleServerless/simple-db-connection.git
