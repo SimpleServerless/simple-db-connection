@@ -1,8 +1,7 @@
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 import logging
-import utils
-import db_utils
+from AppShared import db_utils, utils
 import program_sql
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
