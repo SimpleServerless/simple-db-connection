@@ -40,38 +40,61 @@ def list_students(conn) -> dict:
 @transaction
 def get_student(conn, student_id) -> dict:
     with conn.cursor() as curs:
-        curs.execute(student_sql.GET_STUDENT_BY_STUDENT_ID, (student_id,))
+        curs.execute(student_sql.GET_STUDENT_BY_STUDENT_ID, {'student_id': student_id})
         item = curs.fetchone()
     item = utils.camelfy(item)
 
     return item
-
-
 
 
 #
 # Mutation Actions
 #
-@app.post("/students/<student_id>") # Resolves for a ReST endpoint
+
+@app.post("/students")
 @transaction
-def save_student(conn, student_id) -> dict:
+def create_student(conn) -> dict:
+    student_uuid = utils.generate_uuid()
+    student_in = app.current_event.json_body
+    student_in['studentUuid'] = student_uuid
+    return save_student(conn, student_in)
+
+
+@app.put("/students/<student_id>") # Resolves for a ReST endpoint
+@transaction
+def update_student(conn, student_id) -> dict:
+    student_in = app.current_event.json_body
+    existing_student = get_student(student_id)
+    # Merge existing values with incoming values with incoming values taking precedence
+    if existing_student:
+        student_in = {**existing_student, **student_in}
+    else:
+        raise Exception(f"Student with studentId {student_in.get('studentId')} not found for update")
+    return save_student(conn, student_in)
+
+
+def save_student(conn, student_in) -> dict:
     with conn.cursor() as curs:
-        student_in = app.current_event.json_body
-        student_existing = get_student(student_id)
-        # Merge student_in and student_existing, giving preference to student_in
-        if student_existing is not None:
-            student_in = {**student_existing, **student_in}
-        curs.execute(student_sql.SAVE_STUDENT, (
-                                        student_in['studentUuid'],
-                                        student_in['studentId'],
-                                        student_in['firstName'],
-                                        student_in['lastName'],
-                                        student_in['status'],
-                                        student_in['programId'],
-                                        True,
-                                        'system',
-                                        'system'))
+        curs.execute(student_sql.SAVE_STUDENT, {
+            'student_uuid': student_in['studentUuid'],
+            'student_id': student_in['studentId'],
+            'first_name': student_in['firstName'],
+            'last_name': student_in['lastName'],
+            'status': student_in['status'],
+            'program_id': student_in['programId'],
+            'active': True,
+            'updated_by': 'system',
+            'created_by': 'system'
+        })
         item = curs.fetchone()
     item = utils.camelfy(item)
 
     return item
+
+
+@app.delete("/students/<student_id>")
+@transaction
+def delete_student(conn, student_id) -> dict:
+    with conn.cursor() as curs:
+        curs.execute(student_sql.DELETE_STUDENT, {'student_id': student_id})
+    return {'result': 'success'}

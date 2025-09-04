@@ -3,34 +3,14 @@ import sys
 import os
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-import utils
+# Let's use the shared utils module if available
+sys.path.append(os.path.join(os.path.dirname(__file__), '../shared/src'))
+from AppShared import utils
 
 events = {
-    "LIST_STUDENTS": {
-        "version": "2.0",
-        "routeKey": "GET /students",
-        "rawPath": "/students",
-        "headers": {
-          "accept": "application/json"
-        },
-        "requestContext": {
-            "http": {
-              "method": "GET",
-              "path": "/students"
-            },
-            "stage": "$default"
-        },
-        "isBase64Encoded": False
-    },
-
-    "LIST_STUDENTS_EASY": utils.create_rest_event("GET", "/students"),
-
-    "GET_STUDENT_BY_STUDENT_ID": utils.create_rest_event("GET", "/students/1"),
-
-    "CREATE_STUDENT": utils.create_rest_event("POST", "/students", {"firstName": "Jane", "last_name": "Doe", "status": "ENROLLED"}),
-
-    "UPDATE_STUDENT": utils.create_rest_event("PUT", "/students/1", {"status": "ENROLLED"}),
-
+    "LIST_CLASSES": utils.create_rest_event("GET", "/classes"),
+    "GET_CLASS_BY_CLASS_ID": utils.create_rest_event("GET", "/classes/c69ce217-c08d-4e50-bdda-4dfe4f9a9a3c"),
+    "DELETE_CLASS": utils.create_rest_event("DELETE", "/classes/c69ce217-c08d-4e50-bdda-4dfe4f9a9a3c"),
 }
 
 
@@ -49,10 +29,6 @@ def run(event_key, handler_function):
 
     # Get the event dictionary from events
     event = events[event_key]
-
-    # For backwards compatibility, handle string events
-    if isinstance(event, str):
-        event = json.loads(event)
 
     # Print event in a readable format
     print("\nEVENT:")

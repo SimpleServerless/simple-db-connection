@@ -14,3 +14,6 @@ WHERE active = true
 AND program_id = %s;
 """
 
+DELETE_PROGRAM: str = """
+DELETE FROM programs WHERE program_id = %s;
+"""

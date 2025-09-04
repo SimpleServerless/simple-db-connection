@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Simple serverless classes service"
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+      - local
+      - staging
+    Description: The environment to be run on (typically local, dev, staging or prod)
+
+  ServiceName:
+    Type: String
+    Description: The service name
+
+  ServicePath:
+    Type: String
+    Description: "The path for this service ex: /classes"
+
+Mappings:
+  Environment:
+    dev:
+      LogLevel: "DEBUG"
+      DBHost: simple-serverless-aurora-serverless-development.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com
+
+    prod:
+      LogLevel: "INFO"
+      DBHost: simple-serverless-aurora-serverless-prod.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com
+
+Resources:
+
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ServiceName}-${StageName}
+      Handler: lambda_function.handler
+      Runtime: python3.12
+      CodeUri: ./src
+      Timeout: 35
+      MemorySize: 128
+      Tracing: Active
+      VpcConfig:
+        SecurityGroupIds:
+          - !Sub '{{resolve:ssm:AppSecurityGroup}}'
+        SubnetIds:
+          - !Sub '{{resolve:ssm:private-subnet-1}}'
+          - !Sub '{{resolve:ssm:private-subnet-2}}'
+          - !Sub '{{resolve:ssm:private-subnet-3}}'
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:simple-serverless/db-credentials*
+
+      Environment:
+        Variables:
+          STAGE: !Ref StageName
+          PGHOST: !FindInMap [ Environment, !Ref StageName, DBHost ]
+          PGPORT: 5432
+          PGDATABASE: !Sub simple_serverless_${StageName}
+          LOG_LEVEL: !FindInMap [Environment, !Ref StageName, LogLevel]
+          POWERTOOLS_SERVICE_NAME: !Sub simple-serverless-${ServiceName}
+
+
+  # API Gateway (REST stuff) starts here
+
+  APIGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaFunction
+      Principal: apigateway.amazonaws.com
+    DependsOn:
+      - LambdaFunction
+
+  ApiGatewayV2Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      IntegrationType: "AWS_PROXY"
+      IntegrationUri: !GetAtt LambdaFunction.Arn
+      TimeoutInMillis: 30000
+      PayloadFormatVersion: 2.0
+
+  RouteGetPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey: !Sub "GET /${ServicePath}/{proxy+}"
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      Target: !Sub 'integrations/${ApiGatewayV2Integration}'
+
+  RouteGetNoPath:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      RouteKey: !Sub "GET /${ServicePath}"
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      Target: !Sub 'integrations/${ApiGatewayV2Integration}'
+
+  RoutePostPath:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      RouteKey: !Sub "POST /${ServicePath}/{proxy+}"
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      Target: !Sub 'integrations/${ApiGatewayV2Integration}'
+
+  RoutePostNoPath:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      RouteKey: !Sub "POST /${ServicePath}"
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      Target: !Sub 'integrations/${ApiGatewayV2Integration}'
+
+  RouteDeletePath:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      RouteKey: !Sub "DELETE /${ServicePath}/{proxy+}"
+      ApiId:
+        Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+      Target: !Sub 'integrations/${ApiGatewayV2Integration}'
+
+Outputs:
+  ImportedApiGatewayId:
+    Description: "The imported ID of the REST API Gateway"
+    Value:
+      Fn::ImportValue: !Sub "api-config-${StageName}-RestApiId"
+    Export:
+      Name: !Sub "classes-${StageName}-RestApiId"
