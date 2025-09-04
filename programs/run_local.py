@@ -3,7 +3,7 @@ import sys
 import os
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-import utils
+from AppShared import utils
 
 events = {
     "LIST_PROGRAMS": utils.create_rest_event("GET", "/programs"),

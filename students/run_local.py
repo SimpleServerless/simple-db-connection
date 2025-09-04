@@ -2,8 +2,7 @@ import json
 import sys
 import os
 from aws_lambda_powertools.utilities.typing import LambdaContext
-
-import utils
+from AppShared import utils
 
 events = {
     "LIST_STUDENTS": {
@@ -26,6 +25,8 @@ events = {
     "LIST_STUDENTS_EASY": utils.create_rest_event("GET", "/students"),
 
     "GET_STUDENT_BY_STUDENT_ID": utils.create_rest_event("GET", "/students/1"),
+
+    "GET_STUDENT_BY_STUDENT_NAME": utils.create_rest_event("GET", "/students/name/Jones"),
 
     "CREATE_STUDENT": utils.create_rest_event("POST", "/students", {"firstName": "Jane", "last_name": "Doe", "status": "ENROLLED"}),
 

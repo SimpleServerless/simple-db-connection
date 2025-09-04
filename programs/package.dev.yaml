@@ -33,7 +33,7 @@ Resources:
         Fn::Sub: ${ServiceName}-${StageName}
       Handler: lambda_function.handler
       Runtime: python3.12
-      CodeUri: s3://simple-serverless-dev-lambda-artifacts-us-east-2/e367c607d45319a9036f5dc44937226c
+      CodeUri: s3://simple-serverless-dev-lambda-artifacts-us-east-2/37b0129fb35bbe7e3fa6022c109b671f
       Timeout: 35
       MemorySize: 128
       Tracing: Active

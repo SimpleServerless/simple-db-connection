@@ -1,9 +1,7 @@
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 import logging
-from utils import Router
-import utils
-import db_utils
+from AppShared import db_utils, utils
 import student_sql
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
@@ -12,7 +10,6 @@ Logger("botocore").setLevel(logging.INFO)
 Logger("urllib3").setLevel(logging.INFO)
 
 app = APIGatewayHttpResolver()
-router: Router = Router()
 transaction = db_utils.transaction
 
 # Handler
@@ -20,11 +17,6 @@ transaction = db_utils.transaction
 def handler(event: dict, context: LambdaContext) -> dict:
     print(event)
     return app.resolve(event, context)
-
-
-#
-# Query Actions
-#
 
 @app.get("/students")
 @transaction
@@ -46,10 +38,6 @@ def get_student(conn, student_id) -> dict:
 
     return item
 
-
-#
-# Mutation Actions
-#
 
 @app.post("/students")
 @transaction

@@ -14,6 +14,13 @@ WHERE active = true
 AND student_id = %(student_id)s;
 """
 
+GET_STUDENT_BY_STUDENT_NAME: str = """
+SELECT student_uuid, student_id, first_name, last_name, status, program_id
+FROM students
+WHERE active = true
+AND last_name = %(last_name)s;
+"""
+
 # Closest thing postgres has to an upsert
 SAVE_STUDENT: str = """
 INSERT INTO students (student_uuid, student_id, first_name, last_name, status, program_id, active, updated_by, created_by)

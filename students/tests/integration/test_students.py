@@ -16,7 +16,7 @@ sys.path.insert(0, str(src_dir))
 sys.path.insert(0, str(service_dir))
 
 import lambda_function
-import utils
+from AppShared import utils
 
 class MockContext(LambdaContext):
     def __init__(self,
